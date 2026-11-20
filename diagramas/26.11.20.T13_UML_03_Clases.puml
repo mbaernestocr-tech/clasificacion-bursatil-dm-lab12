@@ -1,0 +1,172 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE CLASES - BATD
+' =============================================
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam Padding 10
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+
+' --- NEGRITAS GLOBALES ---
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+
+' --- FLECHAS ---
+skinparam ArrowColor darkgreen
+skinparam ArrowFontStyle bold
+skinparam ArrowFontColor black
+
+' --- CLASE ---
+skinparam class {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    AttributeFontColor black
+    AttributeFontSize 12
+    AttributeFontStyle plain
+    StereotypeFontColor #5D6D7E
+    StereotypeFontSize 11
+    StereotypeFontStyle italic
+    HeaderBackgroundColor #5DADE2
+    BorderThickness 2
+}
+
+' --- INTERFAZ ---
+skinparam interface {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+
+' --- CLASE ABSTRACTA ---
+skinparam abstract {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    HeaderBackgroundColor #85C1E9
+}
+
+' --- ENUMERACIÓN ---
+skinparam enum {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    AttributeFontColor black
+    AttributeFontSize 12
+}
+
+' --- PAQUETE ---
+skinparam package {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+
+' --- NOTAS ---
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+' --- LEYENDA ---
+skinparam legendBackgroundColor #FBFCFC
+skinparam legendBorderColor #5D6D7E
+skinparam legendFontColor black
+skinparam legendFontSize 11
+
+title Diagrama de Clases del Laboratorio de Clasificación Bursátil
+
+package "Datos" {
+    class SerieDePrecios {
+        + ticker : String
+        + cierres : Serie
+        + rendimientosLog() : Serie
+        + volatilidad(ventana : int) : Serie
+    }
+    class ConstructorDeVariables {
+        + variablesCausales(serie : SerieDePrecios) : Tabla
+        + objetivo(tipo : TipoObjetivo) : Serie
+    }
+    enum TipoObjetivo {
+        DIRECCION
+        ALTA_VOLATILIDAD
+        CAIDA_EXTREMA
+        RELATIVO_A_MEDIANA
+    }
+}
+package "Modelos" {
+    abstract class Clasificador {
+        + nombre : String
+        + ajustar(X : Tabla, y : Serie) : void
+        + probabilidad(X : Tabla) : Serie
+    }
+    class Logistica
+    class NaiveBayes
+    class SVM {
+        + C : float
+        + gamma : float
+    }
+    class Ensamble {
+        + nArboles : int
+        + profundidad : int
+    }
+}
+package "Evaluación" {
+    class MatrizDeConfusion {
+        + vp : int
+        + fp : int
+        + fn : int
+        + vn : int
+        + precision() : float
+        + exhaustividad() : float
+    }
+    class UmbralPorCostos {
+        + costoFP : float
+        + costoFN : float
+        + optimo() : float
+    }
+}
+package "Sistema" {
+    class Recomendacion {
+        + activo : String
+        + probabilidad : float
+        + senal : Senal
+    }
+    enum Senal {
+        COMPRAR
+        MANTENER
+        EVITAR
+    }
+    class CarteraTop3 {
+        + costoPorUnidad : float
+        + rebalancear() : void
+        + sharpe() : float
+    }
+}
+
+ConstructorDeVariables ..> SerieDePrecios : usa
+ConstructorDeVariables ..> TipoObjetivo
+Clasificador <|-- Logistica
+Clasificador <|-- NaiveBayes
+Clasificador <|-- SVM
+Clasificador <|-- Ensamble
+Clasificador "1" --> "0..*" Recomendacion : genera
+Recomendacion --> Senal
+MatrizDeConfusion ..> UmbralPorCostos : usa
+CarteraTop3 "1" o-- "3" Recomendacion : compra
+
+@enduml

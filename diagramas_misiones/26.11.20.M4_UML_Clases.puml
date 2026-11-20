@@ -1,0 +1,134 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE CLASES - BATD
+' =============================================
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam Padding 10
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+
+' --- NEGRITAS GLOBALES ---
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+
+' --- FLECHAS ---
+skinparam ArrowColor darkgreen
+skinparam ArrowFontStyle bold
+skinparam ArrowFontColor black
+
+' --- CLASE ---
+skinparam class {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    AttributeFontColor black
+    AttributeFontSize 12
+    AttributeFontStyle plain
+    StereotypeFontColor #5D6D7E
+    StereotypeFontSize 11
+    StereotypeFontStyle italic
+    HeaderBackgroundColor #5DADE2
+    BorderThickness 2
+}
+
+' --- INTERFAZ ---
+skinparam interface {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+
+' --- CLASE ABSTRACTA ---
+skinparam abstract {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    HeaderBackgroundColor #85C1E9
+}
+
+' --- ENUMERACIÓN ---
+skinparam enum {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    AttributeFontColor black
+    AttributeFontSize 12
+}
+
+' --- PAQUETE ---
+skinparam package {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+
+' --- NOTAS ---
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+' --- LEYENDA ---
+skinparam legendBackgroundColor #FBFCFC
+skinparam legendBorderColor #5D6D7E
+skinparam legendFontColor black
+skinparam legendFontSize 11
+
+title Diagrama de Clases — Misión 4: Sistema de Recomendaciones del Portafolio
+
+class PanelDeActivos {
+    + portafolio : List<String>
+    + variables : List<String>
+    + construir() : void
+}
+class WalkForward {
+    + cadaRebalanceo : int
+    + cadaReentrenamiento : int
+    + embargo : int
+    + predecir() : Tabla
+}
+class CarteraTopK {
+    + k : int
+    + costoPorUnidad : float
+    + retornos() : Serie
+}
+class Referencias {
+    + uno_sobre_n : Serie
+    + spy : Serie
+    + azar : Matriz
+}
+class Semaforo {
+    + pAltaVolatilidad : float
+    + pCaidaExtrema : float
+}
+class Recomendacion {
+    + activo : String
+    + probabilidad : float
+    + senal : String
+}
+class ExportadorJSON {
+    + escribir(ruta : String) : void
+}
+
+PanelDeActivos --> WalkForward : alimenta
+WalkForward --> CarteraTopK : probabilidades
+CarteraTopK ..> Referencias : se compara con
+WalkForward --> Recomendacion : última fecha
+Semaforo --> ExportadorJSON
+Recomendacion --> ExportadorJSON
+
+@enduml

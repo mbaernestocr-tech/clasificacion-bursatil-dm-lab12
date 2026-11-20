@@ -1,0 +1,64 @@
+@startuml
+' =============================================
+' DIAGRAMA DE ACTIVIDADES - BATD
+' =============================================
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+skinparam ArrowColor darkgreen
+
+skinparam activity {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 13
+}
+
+skinparam activityDiamond {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+}
+
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+skinparam partition {
+    BackgroundColor #FBFCFC
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+}
+
+title Diagrama de Actividades — Misión 1: ¿Se Puede Predecir la Dirección de los Activos del Grupo?
+
+start
+:Definir los activos del grupo y el horizonte (5 sesiones);
+:Cargar los precios (CSV del curso o Yahoo Finance);
+repeat
+    :Construir variables causales y la etiqueta de dirección;
+    :Partir 70 % y 30 % con embargo;
+    :Entrenar logística, Naive Bayes, Random Forest y XGBoost;
+    :Calcular AUC y exactitud en la prueba;
+    :Barajar las etiquetas 500 veces y obtener el valor p;
+repeat while (¿faltan activos?) is (sí)
+-> no;
+:Contar cuántas pruebas tienen valor p menor de 0,05;
+if (¿el conteo supera lo esperado por azar?) then (sí)
+    :Revisar si son pruebas múltiples o señal real;
+else (no)
+    :Declarar que la dirección es indistinguible del azar;
+endif
+:Comparar la exactitud con la tasa base de «siempre sube»;
+stop
+
+@enduml

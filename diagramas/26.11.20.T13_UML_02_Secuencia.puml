@@ -1,0 +1,97 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE SECUENCIA - BATD
+' =============================================
+skinparam actorStyle awesome
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam BoxPadding 15
+skinparam ParticipantPadding 20
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+skinparam sequenceGroupHeaderFontStyle bold
+
+skinparam sequence {
+    ArrowColor darkgreen
+    LifeLineBorderColor black
+    LifeLineBorderThickness 2.5
+    LifeLineBackgroundColor #85C1E9
+    GroupBorderColor #5D6D7E
+    GroupBodyBackgroundColor #FBFCFC
+    GroupHeaderFontColor black
+    GroupBackgroundColor #CDCDCD
+}
+skinparam participant {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam actor {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam database {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+title Diagrama de Secuencia del Sistema de Recomendaciones de Bolsa (Guía 5)
+
+actor "Estudiante" as EST
+participant "Notebook\nde Colab" as NB
+participant "Yahoo Finance\n(yfinance)" as YF
+participant "Constructor\ndel panel" as PAN
+participant "Walk-forward\n(logística y XGBoost)" as WF
+participant "Evaluador\n(costos, referencias)" as EVA
+participant "Exportador\n(JSON y CSV)" as EXP
+participant "Tablero / API" as TAB
+
+== 1. Cargar precios ==
+EST -> NB : ejecutar celdas de carga
+alt están los 4 CSV del curso
+    NB -> NB : leer la foto de datos
+else no están
+    NB -> YF : descargar 28 activos hasta la fecha de corte
+    YF --> NB : cierres, altos, bajos y volúmenes
+end
+
+== 2. Construir el panel ==
+NB -> PAN : precios del portafolio
+PAN -> PAN : variables causales y objetivo relativo a la mediana
+PAN --> NB : panel (fecha, activo)
+
+== 3. Validar con walk-forward ==
+loop cada 5 sesiones desde mayo de 2022
+    NB -> WF : filas hasta t - 6 (embargo de 5)
+    WF --> NB : probabilidad de cada activo
+end
+
+== 4. Simular la cartera ==
+NB -> EVA : probabilidades y retornos a 5 sesiones
+EVA -> EVA : top-3, costos de 10 pb, 1/N, SPY y 1 000 carteras al azar
+EVA --> NB : retorno, Sharpe, caída máxima y percentil
+
+== 5. Recomendar y exportar ==
+NB -> WF : reentrenar con todas las filas con objetivo
+WF --> NB : probabilidades al último cierre
+NB -> EXP : señales COMPRAR / MANTENER / EVITAR y semáforo
+EXP --> TAB : dashboard_clasificacion.json
+TAB --> EST : tablero con la advertencia de que no es asesoría de inversión
+
+@enduml

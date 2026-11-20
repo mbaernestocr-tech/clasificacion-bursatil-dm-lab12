@@ -1,0 +1,113 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE COMPONENTES - BATD
+' =============================================
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam Padding 10
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+skinparam ArrowColor darkgreen
+skinparam ArrowFontStyle bold
+
+skinparam component {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+skinparam interface {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 12
+}
+skinparam package {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+skinparam database {
+    BackgroundColor #82E0AA
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+title Diagrama de Componentes del Sistema de Clasificación Bursátil (Tema 13, Laboratorio 12)
+
+package "Datos reales" {
+    cloud "Yahoo Finance\n(28 activos y VIX)" as YF
+    file "4 CSV de respaldo\n(carpeta D03)" as CSV
+}
+package "Preparación (solo pasado)" {
+    component "Variables causales\n(retornos, volatilidades,\nVIX, rangos)" as VAR
+    component "Objetivos binarios\n(dirección, alta volatilidad,\ncaída extrema, relativo)" as OBJ
+    component "Partición cronológica\ncon embargo" as PAR
+}
+package "Modelado" {
+    component "Logística y\nNaive Bayes" as LIN
+    component "SVM\n(lineal y RBF)" as SVM
+    component "Ensambles\n(RF, GB, XGBoost, LightGBM)" as ENS
+    component "Rebalanceo\n(pesos y SMOTE en pipeline)" as REB
+}
+package "Evaluación" {
+    component "Métricas\n(AUC-ROC, AUC-PR, F1, Brier)" as MET
+    component "Umbral por costos" as UMB
+    component "Prueba de permutación\ny referencias ingenuas" as PER
+}
+package "Sistema de recomendaciones" {
+    component "Walk-forward\ncon embargo" as WF
+    component "Cartera top-3\ncon costos" as CAR
+    component "Semáforo de mercado\n(alta volatilidad, caída)" as SEM
+}
+package "Despliegue" {
+    file "JSON y CSV\nde recomendaciones" as JSN
+    component "Tablero HTML" as TAB
+    component "API Flask" as API
+}
+actor "Estudiante" as EST
+actor "Gestor de portafolio" as GES
+
+YF --> VAR
+CSV ..> VAR : respaldo
+VAR --> OBJ
+OBJ --> PAR
+PAR --> LIN
+PAR --> SVM
+PAR --> ENS
+REB ..> LIN
+REB ..> ENS
+LIN --> MET
+SVM --> MET
+ENS --> MET
+MET --> UMB
+MET --> PER
+ENS --> WF
+LIN --> WF
+WF --> CAR
+OBJ --> SEM
+CAR --> JSN
+SEM --> JSN
+JSN --> TAB
+JSN --> API
+API --> TAB
+EST --> VAR : ejecuta los notebooks
+GES --> TAB : lee las señales
+
+@enduml

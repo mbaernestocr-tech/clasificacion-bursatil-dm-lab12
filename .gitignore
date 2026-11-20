@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+# salidas que escriben los scripts y la Guia 5 al ejecutarse (las copias de muestra estan en tablero/)
+/notebooks/dashboard_clasificacion.json
+/notebooks/recomendaciones_5_sesiones.csv
+/scripts_grupales/*.csv
+/scripts_grupales/m*_salida.txt
+/scripts_grupales/m4_figura_*.png
+/scripts_grupales/dashboard_clasificacion.json

@@ -1,0 +1,85 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE COMPONENTES - BATD
+' =============================================
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam Padding 10
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+skinparam ArrowColor darkgreen
+skinparam ArrowFontStyle bold
+
+skinparam component {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+skinparam interface {
+    BackgroundColor #AED6F1
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 12
+}
+skinparam package {
+    BackgroundColor #F7DC6F
+    BorderColor #5D6D7E
+    FontColor black
+    FontStyle bold
+    FontSize 14
+    BorderThickness 2
+}
+skinparam database {
+    BackgroundColor #82E0AA
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+title Diagrama de Componentes — Misión 2: Contraste Sintético de Desbalance
+
+package "Generador sintético (semillas 2026 a 2030)" {
+    component "make_classification\n(tasa base variable)" as GEN
+    component "Variables duplicadas\n(copias ruidosas)" as DUP
+}
+package "Barridos" {
+    component "Barrido 1\ntasa base y métricas" as B1
+    component "Barrido 2\nSMOTE antes o dentro" as B2
+    component "Barrido 3\nNaive Bayes y copias" as B3
+}
+package "Modelos" {
+    component "Logística" as LOG
+    component "Random Forest" as RF
+    component "Naive Bayes" as NB
+}
+package "Resultados" {
+    file "CSV de cada barrido" as CSV
+    component "Tabla resumen\n(media de 5 semillas)" as TAB
+}
+
+GEN --> B1
+GEN --> B2
+DUP --> B3
+B1 --> LOG
+B2 --> RF
+B3 --> NB
+B3 --> LOG
+LOG --> CSV
+RF --> CSV
+NB --> CSV
+CSV --> TAB
+
+@enduml

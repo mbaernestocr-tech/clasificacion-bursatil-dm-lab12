@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero de Clasificación Bursátil — Tema 13 DM</title>
+<style>
+  :root { --fondo:#ffffff; --texto:#1a1a1a; --marino:#1F3864; --granate:#800000; --gris:#595959; --borde:#BFBFBF; --verde:#1B5E20; --ambar:#8A5A00; --rojo:#9B1C1C; --panel:#F5F7FA; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Calibri, Arial, sans-serif; color:var(--texto); background:var(--fondo); line-height:1.45; }
+  header { background:var(--marino); color:#fff; padding:16px 24px; }
+  header h1 { margin:0 0 4px; font-size:1.5rem; }
+  header p { margin:0; font-size:.95rem; }
+  main { max-width:1100px; margin:0 auto; padding:16px 24px 40px; }
+  .aviso { border:2px solid var(--granate); background:#FFF5F5; padding:10px 14px; margin:14px 0; font-weight:bold; color:var(--granate); }
+  section { margin:22px 0; }
+  h2 { color:var(--granate); font-size:1.2rem; margin:0 0 8px; border-bottom:2px solid var(--borde); padding-bottom:4px; }
+  .semaforo { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .tarjeta { background:var(--panel); border:1px solid var(--borde); border-radius:6px; padding:12px 14px; }
+  .tarjeta .valor { font-size:2rem; font-weight:bold; color:var(--marino); }
+  .tarjeta .etq { font-size:.9rem; color:var(--gris); }
+  .barra { height:12px; background:#E3E7EE; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .barra > span { display:block; height:100%; background:var(--marino); }
+  table { border-collapse:collapse; width:100%; font-size:.95rem; }
+  caption { text-align:left; font-weight:bold; margin-bottom:4px; color:var(--marino); }
+  th, td { border:1px solid var(--borde); padding:6px 8px; text-align:left; }
+  th { background:#E9EEF7; }
+  td.num { text-align:right; font-variant-numeric: tabular-nums; }
+  .senal { font-weight:bold; padding:2px 8px; border-radius:4px; border:2px solid; display:inline-block; min-width:92px; text-align:center; }
+  .COMPRAR { color:var(--verde); border-color:var(--verde); }
+  .MANTENER { color:var(--ambar); border-color:var(--ambar); }
+  .EVITAR { color:var(--rojo); border-color:var(--rojo); }
+  canvas { width:100%; max-width:1050px; height:340px; border:1px solid var(--borde); background:#fff; }
+  .leyenda span { display:inline-block; margin-right:16px; font-size:.9rem; }
+  .leyenda i { display:inline-block; width:22px; height:0; border-top:4px solid; vertical-align:middle; margin-right:5px; }
+  .nota { font-size:.9rem; color:var(--gris); }
+  button, input[type=file] { font:inherit; }
+  button:focus-visible, input:focus-visible { outline:3px solid #0050D0; outline-offset:2px; }
+  @media (max-width:600px) { main { padding:12px; } header { padding:12px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tablero de Clasificación Bursátil — Tema 13 (Laboratorio 12)</h1>
+  <p>Minería de Datos · FISI · UNMSM · 2026-II · Prof. Ernesto D. Cancho-Rodríguez · Corte de datos: <span id="corte">—</span></p>
+</header>
+<main>
+  <p class="aviso" role="note">Material educativo. No es asesoría de inversión. Las probabilidades de selección de activos tienen un AUC de ranking cercano a 0,50: no se distinguen del azar.</p>
+
+  <section aria-labelledby="h-sem">
+    <h2 id="h-sem">1. Semáforo de mercado (SPY)</h2>
+    <div class="semaforo">
+      <div class="tarjeta"><div class="etq">VIX al cierre</div><div class="valor" id="vix">—</div></div>
+      <div class="tarjeta"><div class="etq">Probabilidad de alta volatilidad en las próximas 22 sesiones (tasa base histórica: 0,30)</div><div class="valor" id="pvol">—</div><div class="barra" aria-hidden="true"><span id="bvol" style="width:0"></span></div></div>
+      <div class="tarjeta"><div class="etq">Probabilidad de caída de 4 % o más en 10 sesiones (tasa base histórica: 0,10)</div><div class="valor" id="pcrash">—</div><div class="barra" aria-hidden="true"><span id="bcrash" style="width:0"></span></div></div>
+    </div>
+    <p class="nota" id="lectura-sem"></p>
+  </section>
+
+  <section aria-labelledby="h-rec">
+    <h2 id="h-rec">2. Recomendaciones para las próximas 5 sesiones</h2>
+    <table>
+      <caption>Probabilidad de superar a la mediana del portafolio y señal (regla: COMPRAR = 3 mayores con probabilidad ≥ 0,50; EVITAR = 3 menores)</caption>
+      <thead><tr><th scope="col">Activo</th><th scope="col">Nombre</th><th scope="col">Logística</th><th scope="col">XGBoost</th><th scope="col">Conjunto</th><th scope="col">Señal</th></tr></thead>
+      <tbody id="tbody-rec"></tbody>
+    </table>
+  </section>
+
+  <section aria-labelledby="h-cap">
+    <h2 id="h-cap">3. Curva de capital del backtest (base 100, costos de 10 pb)</h2>
+    <canvas id="grafico" width="1050" height="340" role="img" aria-label="Curva de capital base 100 de la estrategia conjunto, la logística, 1/N y SPY desde mayo de 2022"></canvas>
+    <p class="leyenda" id="leyenda"></p>
+    <table>
+      <caption>Métricas del backtest semanal (walk-forward desde mayo de 2022)</caption>
+      <thead><tr><th scope="col">Cartera</th><th scope="col">Retorno anual %</th><th scope="col">Volatilidad %</th><th scope="col">Sharpe</th><th scope="col">Caída máxima %</th><th scope="col">Semanas con ganancia %</th></tr></thead>
+      <tbody id="tbody-met"></tbody>
+    </table>
+    <p class="nota" id="nota-azar"></p>
+  </section>
+
+  <section aria-labelledby="h-cargar">
+    <h2 id="h-cargar">4. Cargar otro JSON</h2>
+    <p class="nota">Cargue el archivo <code>dashboard_clasificacion.json</code> generado por el notebook G5 o por el script m4 con los activos de su grupo.</p>
+    <label for="archivo">Archivo JSON:</label> <input id="archivo" type="file" accept="application/json,.json">
+  </section>
+</main>
+<script>
+const DATOS_INCRUSTADOS = {"fecha_corte": "2026-11-19", "portafolio": ["BVN", "FSM", "SCCO", "BHP", "B", "AAPL", "JPM", "XOM", "KO", "PFE"], "aviso": "Material educativo; no es asesoría de inversión.", "semaforo": {"vix": 28.44, "p_alta_volatilidad_22": 0.906, "p_caida_extrema_10": 0.204}, "recomendaciones": [{"activo": "BVN", "nombre": "Buenaventura (Perú)", "p_logistica": 0.512, "p_xgboost": 0.624, "p_conjunto": 0.568, "senal": "COMPRAR"}, {"activo": "SCCO", "nombre": "Southern Copper", "p_logistica": 0.523, "p_xgboost": 0.569, "p_conjunto": 0.546, "senal": "COMPRAR"}, {"activo": "FSM", "nombre": "Fortuna Mining", "p_logistica": 0.498, "p_xgboost": 0.556, "p_conjunto": 0.527, "senal": "COMPRAR"}, {"activo": "XOM", "nombre": "ExxonMobil", "p_logistica": 0.508, "p_xgboost": 0.544, "p_conjunto": 0.526, "senal": "MANTENER"}, {"activo": "BHP", "nombre": "BHP", "p_logistica": 0.501, "p_xgboost": 0.538, "p_conjunto": 0.519, "senal": "MANTENER"}, {"activo": "B", "nombre": "Barrick Mining", "p_logistica": 0.497, "p_xgboost": 0.541, "p_conjunto": 0.519, "senal": "MANTENER"}, {"activo": "PFE", "nombre": "Pfizer", "p_logistica": 0.507, "p_xgboost": 0.506, "p_conjunto": 0.507, "senal": "MANTENER"}, {"activo": "KO", "nombre": "Coca-Cola", "p_logistica": 0.507, "p_xgboost": 0.485, "p_conjunto": 0.496, "senal": "EVITAR"}, {"activo": "JPM", "nombre": "JPMorgan", "p_logistica": 0.494, "p_xgboost": 0.49, "p_conjunto": 0.492, "senal": "EVITAR"}, {"activo": "AAPL", "nombre": "Apple", "p_logistica": 0.498, "p_xgboost": 0.472, "p_conjunto": 0.485, "senal": "EVITAR"}], "backtest": {"fechas": ["2022-05-09", "2022-05-16", "2022-05-23", "2022-05-31", "2022-06-07", "2022-06-14", "2022-06-22", "2022-06-29", "2022-07-07", "2022-07-14", "2022-07-21", "2022-07-28", "2022-08-04", "2022-08-11", "2022-08-18", "2022-08-25", "2022-09-01", "2022-09-09", "2022-09-16", "2022-09-23", "2022-09-30", "2022-10-07", "2022-10-14", "2022-10-21", "2022-10-28", "2022-11-04", "2022-11-11", "2022-11-18", "2022-11-28", "2022-12-05", "2022-12-12", "2022-12-19", "2022-12-27", "2023-01-04", "2023-01-11", "2023-01-19", "2023-01-26", "2023-02-02", "2023-02-09", "2023-02-16", "2023-02-24", "2023-03-03", "2023-03-10", "2023-03-17", "2023-03-24", "2023-03-31", "2023-04-10", "2023-04-17", "2023-04-24", "2023-05-01", "2023-05-08", "2023-05-15", "2023-05-22", "2023-05-30", "2023-06-06", "2023-06-13", "2023-06-21", "2023-06-28", "2023-07-06", "2023-07-13", "2023-07-20", "2023-07-27", "2023-08-03", "2023-08-10", "2023-08-17", "2023-08-24", "2023-08-31", "2023-09-08", "2023-09-15", "2023-09-22", "2023-09-29", "2023-10-06", "2023-10-13", "2023-10-20", "2023-10-27", "2023-11-03", "2023-11-10", "2023-11-17", "2023-11-27", "2023-12-04", "2023-12-11", "2023-12-18", "2023-12-26", "2024-01-03", "2024-01-10", "2024-01-18", "2024-01-25", "2024-02-01", "2024-02-08", "2024-02-15", "2024-02-23", "2024-03-01", "2024-03-08", "2024-03-15", "2024-03-22", "2024-04-01", "2024-04-08", "2024-04-15", "2024-04-22", "2024-04-29", "2024-05-06", "2024-05-13", "2024-05-20", "2024-05-28", "2024-06-04", "2024-06-11", "2024-06-18", "2024-06-26", "2024-07-03", "2024-07-11", "2024-07-18", "2024-07-25", "2024-08-01", "2024-08-08", "2024-08-15", "2024-08-22", "2024-08-29", "2024-09-06", "2024-09-13", "2024-09-20", "2024-09-27", "2024-10-04", "2024-10-11", "2024-10-18", "2024-10-25", "2024-11-01", "2024-11-08", "2024-11-15", "2024-11-22", "2024-12-02", "2024-12-09", "2024-12-16", "2024-12-23", "2024-12-31", "2025-01-08", "2025-01-16", "2025-01-24", "2025-01-31", "2025-02-07", "2025-02-14", "2025-02-24", "2025-03-03", "2025-03-10", "2025-03-17", "2025-03-24", "2025-03-31", "2025-04-07", "2025-04-14", "2025-04-22", "2025-04-29", "2025-05-06", "2025-05-13", "2025-05-20", "2025-05-28", "2025-06-04", "2025-06-11", "2025-06-18", "2025-06-26", "2025-07-03", "2025-07-11", "2025-07-18", "2025-07-25", "2025-08-01", "2025-08-08", "2025-08-15", "2025-08-22", "2025-08-29", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-06", "2025-10-13", "2025-10-20", "2025-10-27", "2025-11-03", "2025-11-10", "2025-11-17", "2025-11-24", "2025-12-02", "2025-12-09", "2025-12-16", "2025-12-23", "2025-12-31", "2026-01-08", "2026-01-15", "2026-01-23", "2026-01-30", "2026-02-06", "2026-02-13", "2026-02-23", "2026-03-02", "2026-03-09", "2026-03-16", "2026-03-23", "2026-03-30", "2026-04-07", "2026-04-14", "2026-04-21", "2026-04-28", "2026-05-05", "2026-05-12", "2026-05-19", "2026-05-27", "2026-06-03", "2026-06-10", "2026-06-17", "2026-06-25", "2026-07-02", "2026-07-10", "2026-07-17", "2026-07-24", "2026-07-31", "2026-08-07", "2026-08-14", "2026-08-21", "2026-08-28", "2026-09-04", "2026-09-14", "2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09"], "equidad": {"Conjunto": [99.225, 101.881, 105.075, 107.05, 95.41, 94.35, 96.454, 95.558, 92.815, 94.665, 96.194, 97.115, 96.436, 97.983, 96.04, 91.764, 92.991, 90.63, 87.929, 84.731, 84.955, 79.895, 85.227, 89.744, 89.504, 99.976, 99.284, 99.899, 103.65, 104.987, 102.743, 105.132, 104.961, 114.209, 115.145, 121.74, 119.286, 114.831, 115.061, 108.446, 116.145, 109.648, 109.068, 111.905, 113.909, 114.517, 115.237, 114.372, 115.347, 115.4, 110.433, 106.448, 105.198, 106.296, 107.87, 108.935, 108.489, 109.517, 111.086, 114.578, 114.594, 113.781, 111.471, 109.218, 109.0, 110.275, 109.88, 111.367, 108.619, 108.891, 105.275, 107.272, 107.756, 106.513, 109.349, 111.565, 113.186, 113.47, 113.726, 114.659, 116.819, 118.199, 116.665, 115.128, 114.72, 116.469, 117.589, 115.699, 115.637, 117.652, 115.128, 116.572, 118.39, 119.373, 121.115, 121.547, 117.564, 119.849, 123.766, 122.017, 125.174, 134.298, 129.545, 131.021, 131.381, 131.623, 132.413, 135.883, 135.916, 139.448, 139.331, 141.797, 138.532, 138.563, 137.333, 138.095, 132.852, 133.663, 135.087, 134.679, 132.339, 131.588, 131.379, 127.84, 123.463, 124.241, 120.462, 123.542, 123.487, 123.607, 121.91, 120.96, 120.818, 120.927, 120.648, 121.141, 123.118, 123.449, 128.9, 125.526, 123.296, 118.851, 127.378, 127.346, 128.905, 116.411, 128.305, 130.598, 126.059, 130.594, 120.509, 120.837, 122.252, 122.195, 124.98, 124.817, 127.765, 130.609, 129.066, 124.171, 127.994, 124.016, 129.667, 131.477, 138.636, 140.085, 140.904, 141.763, 146.028, 142.176, 142.568, 142.21, 141.8, 144.368, 146.759, 150.264, 150.018, 154.817, 158.776, 158.314, 155.777, 156.072, 152.401, 150.085, 160.278, 165.026, 162.993, 172.791, 172.673, 177.678, 184.575, 161.629, 162.658, 148.87, 153.524, 162.279, 163.932, 159.073, 158.94, 159.988, 161.515, 153.062, 157.915, 158.133, 151.618, 166.116, 161.087, 169.925, 168.673, 169.83, 178.004, 174.25, 178.786, 181.227, 182.079, 178.559, 179.543, 170.703, 171.577, 170.71, 169.159, 171.962, 176.422, 170.146, 167.1, 172.329, 175.662], "Logística": [102.984, 103.909, 104.829, 107.976, 98.899, 97.866, 100.049, 101.827, 94.782, 97.517, 99.508, 100.461, 99.758, 102.127, 100.102, 94.531, 95.459, 92.186, 88.4, 88.167, 92.663, 90.153, 96.785, 102.22, 104.58, 112.678, 110.274, 110.46, 111.148, 113.285, 110.871, 114.348, 114.238, 124.303, 125.321, 125.641, 122.322, 121.227, 120.976, 116.311, 127.326, 118.35, 123.084, 126.428, 128.776, 127.87, 131.873, 131.47, 132.678, 135.415, 129.676, 123.684, 122.923, 124.674, 124.627, 125.774, 125.26, 127.541, 128.792, 130.925, 131.588, 130.565, 127.916, 125.922, 131.663, 135.0, 133.116, 135.573, 131.558, 132.931, 126.874, 129.585, 131.985, 130.463, 132.476, 133.998, 138.831, 139.271, 142.924, 141.209, 143.868, 143.422, 139.013, 140.331, 139.835, 141.966, 145.001, 140.142, 141.341, 144.491, 141.39, 143.165, 148.63, 151.67, 153.984, 154.533, 149.052, 147.154, 151.963, 150.602, 154.399, 167.325, 165.139, 158.21, 158.434, 158.725, 159.687, 164.09, 166.435, 170.76, 170.616, 173.598, 171.15, 176.071, 180.979, 184.185, 180.128, 179.961, 179.018, 178.477, 176.523, 178.293, 180.947, 172.325, 165.193, 166.344, 161.284, 164.167, 159.867, 167.054, 164.648, 164.203, 164.12, 163.175, 162.798, 165.078, 170.417, 168.424, 172.438, 165.861, 164.07, 158.047, 168.818, 168.663, 172.721, 156.922, 164.726, 161.231, 160.774, 165.226, 153.411, 157.053, 160.305, 161.569, 166.105, 165.778, 168.331, 172.977, 170.942, 161.968, 171.612, 165.638, 169.16, 171.194, 176.891, 178.34, 176.967, 182.007, 202.667, 197.682, 198.15, 197.52, 199.26, 195.77, 200.669, 201.707, 197.508, 210.556, 211.013, 214.81, 213.607, 210.42, 210.732, 217.256, 232.156, 240.716, 213.224, 225.758, 229.297, 235.944, 250.074, 217.127, 218.51, 204.116, 210.068, 228.229, 230.061, 217.865, 215.939, 217.449, 216.328, 193.163, 205.358, 204.91, 206.732, 216.449, 210.041, 221.564, 221.995, 231.41, 241.753, 236.655, 242.665, 242.478, 250.259, 246.078, 245.973, 234.091, 235.993, 231.83, 230.157, 233.817, 235.655, 230.527, 229.588, 223.342, 227.811], "1/N (10 activos)": [100.33, 105.244, 106.904, 109.958, 98.798, 97.42, 96.726, 95.041, 89.759, 92.232, 93.638, 93.22, 95.253, 96.107, 96.736, 89.295, 95.36, 91.761, 87.084, 89.592, 92.915, 90.369, 95.68, 97.566, 99.924, 107.756, 107.14, 106.588, 110.028, 110.887, 106.945, 110.756, 111.0, 114.065, 113.674, 118.131, 115.709, 112.645, 112.561, 108.076, 113.698, 107.867, 109.34, 111.213, 115.665, 116.272, 118.136, 116.634, 115.221, 116.391, 112.622, 111.417, 107.9, 111.782, 113.324, 112.291, 110.572, 109.952, 116.451, 116.881, 117.187, 115.777, 114.365, 111.604, 112.52, 115.118, 111.898, 114.911, 111.592, 110.113, 108.742, 110.33, 110.297, 108.472, 111.905, 110.965, 115.63, 117.339, 119.09, 117.881, 126.272, 130.598, 128.198, 127.339, 121.723, 124.133, 125.537, 122.889, 122.789, 122.759, 122.468, 126.542, 131.543, 131.838, 134.643, 139.013, 137.095, 136.546, 141.234, 142.063, 144.951, 151.256, 149.839, 146.79, 143.108, 143.556, 144.472, 148.202, 150.725, 149.042, 146.088, 146.236, 141.331, 146.473, 147.07, 147.849, 140.354, 147.534, 149.793, 154.19, 154.497, 154.013, 155.432, 152.275, 147.966, 147.395, 142.605, 146.534, 144.859, 148.155, 143.585, 140.783, 138.854, 141.656, 142.061, 142.882, 145.155, 147.381, 151.277, 148.798, 145.336, 146.73, 154.141, 155.785, 156.179, 136.631, 149.889, 150.615, 152.017, 152.173, 152.116, 152.887, 152.565, 157.569, 161.157, 160.253, 163.024, 167.172, 167.378, 162.637, 167.635, 161.606, 169.857, 172.868, 177.726, 178.483, 180.753, 184.235, 191.126, 195.804, 200.7, 199.471, 201.867, 196.051, 197.89, 202.94, 201.002, 205.255, 212.326, 214.195, 216.985, 223.885, 219.607, 228.349, 237.693, 244.019, 241.297, 252.306, 254.309, 264.645, 272.629, 253.306, 245.334, 233.351, 238.206, 248.056, 255.516, 247.398, 244.426, 246.117, 265.614, 251.698, 259.344, 260.232, 245.818, 261.226, 243.437, 249.44, 248.946, 249.762, 257.595, 257.124, 277.387, 275.108, 294.899, 291.858, 288.732, 282.91, 284.614, 281.555, 279.292, 284.409, 282.999, 274.049, 272.182, 278.962, 261.553], "SPY": [100.482, 99.686, 103.707, 104.413, 93.897, 94.434, 95.935, 98.116, 95.322, 100.588, 102.425, 104.468, 105.936, 107.928, 105.815, 99.991, 102.558, 97.651, 93.191, 90.463, 91.884, 90.577, 94.796, 98.527, 95.318, 100.931, 100.303, 100.272, 101.204, 101.042, 96.69, 97.041, 97.641, 100.633, 98.883, 102.982, 106.043, 103.577, 103.88, 100.852, 102.839, 98.188, 99.605, 101.076, 104.56, 104.616, 105.722, 105.387, 106.123, 105.415, 105.484, 106.961, 107.316, 109.321, 111.525, 111.498, 111.87, 112.708, 115.246, 115.918, 115.997, 115.061, 114.31, 111.844, 111.998, 115.448, 114.21, 114.06, 110.729, 109.972, 110.502, 111.006, 108.354, 105.65, 111.827, 113.35, 115.969, 116.918, 117.487, 118.85, 121.91, 122.86, 121.088, 123.095, 123.077, 126.058, 126.36, 128.716, 129.669, 131.178, 132.469, 132.177, 132.098, 135.047, 135.293, 134.402, 130.704, 129.479, 132.158, 133.845, 134.969, 137.34, 137.275, 136.907, 139.125, 142.115, 141.799, 143.346, 144.651, 143.658, 139.953, 141.149, 137.936, 143.764, 144.583, 145.137, 140.46, 146.088, 148.163, 149.003, 149.396, 151.117, 152.424, 150.976, 148.891, 155.97, 152.726, 155.271, 157.388, 157.662, 158.212, 155.579, 153.326, 154.218, 154.781, 159.053, 157.444, 157.169, 159.506, 156.238, 152.722, 146.655, 148.374, 150.639, 146.784, 132.349, 141.465, 138.351, 145.454, 146.629, 153.987, 155.564, 154.221, 156.372, 157.797, 156.768, 161.03, 164.575, 164.122, 165.164, 167.669, 163.622, 167.691, 169.338, 169.83, 169.762, 170.757, 173.936, 175.983, 175.149, 177.242, 174.98, 177.16, 180.839, 180.337, 179.836, 175.674, 176.482, 179.86, 180.258, 179.158, 182.093, 180.494, 182.503, 183.226, 182.429, 183.154, 182.797, 180.449, 180.619, 181.675, 179.528, 177.083, 173.943, 167.73, 174.962, 184.316, 186.869, 188.888, 192.095, 195.919, 194.738, 199.178, 200.182, 192.535, 196.657, 195.391, 198.18, 200.886, 197.784, 196.623, 198.779, 205.758, 206.578, 203.752, 204.718, 204.942, 202.464, 206.333, 204.229, 206.688, 207.56, 204.461, 204.165, 200.625, 200.782, 197.384]}, "metricas": {"Logística": {"retorno anual %": 20.76, "volatilidad anual %": 24.91, "Sharpe": 0.88, "caída máxima %": -22.76, "semanas con ganancia %": 56.83}, "XGBoost": {"retorno anual %": 11.32, "volatilidad anual %": 22.3, "Sharpe": 0.59, "caída máxima %": -21.44, "semanas con ganancia %": 55.07}, "Conjunto": {"retorno anual %": 13.78, "volatilidad anual %": 22.85, "Sharpe": 0.68, "caída máxima %": -25.37, "semanas con ganancia %": 57.71}, "1/N (10 activos)": {"retorno anual %": 24.64, "volatilidad anual %": 22.47, "Sharpe": 1.09, "caída máxima %": -20.8, "semanas con ganancia %": 57.71}, "SPY": {"retorno anual %": 16.86, "volatilidad anual %": 16.32, "Sharpe": 1.04, "caída máxima %": -17.03, "semanas con ganancia %": 61.23}}, "sharpe_azar": {"media": 0.65, "p5": 0.21, "p95": 1.08}}};
+const f2 = (x) => Number(x).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const f3 = (x) => Number(x).toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+function pintar(d) {
+  document.getElementById("corte").textContent = d.fecha_corte;
+  const s = d.semaforo;
+  document.getElementById("vix").textContent = f2(s.vix);
+  document.getElementById("pvol").textContent = f3(s.p_alta_volatilidad_22);
+  document.getElementById("pcrash").textContent = f3(s.p_caida_extrema_10);
+  document.getElementById("bvol").style.width = (s.p_alta_volatilidad_22 * 100) + "%";
+  document.getElementById("bcrash").style.width = (s.p_caida_extrema_10 * 100) + "%";
+  document.getElementById("lectura-sem").textContent = "Lectura: con un VIX de " + f2(s.vix) + ", la probabilidad de un periodo agitado es " + f3(s.p_alta_volatilidad_22) +
+    " (la tasa base histórica es 0,30). La volatilidad sí se anticipa; la selección de activos no.";
+  const tb = document.getElementById("tbody-rec"); tb.innerHTML = "";
+  d.recomendaciones.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<th scope='row'>" + r.activo + "</th><td>" + r.nombre + "</td><td class='num'>" + f3(r.p_logistica) + "</td><td class='num'>" + f3(r.p_xgboost) +
+      "</td><td class='num'>" + f3(r.p_conjunto) + "</td><td><span class='senal " + r.senal + "'>" + r.senal + "</span></td>";
+    tb.appendChild(tr);
+  });
+  const m = d.backtest.metricas, tm = document.getElementById("tbody-met"); tm.innerHTML = "";
+  Object.keys(m).forEach(n => {
+    const x = m[n], tr = document.createElement("tr");
+    tr.innerHTML = "<th scope='row'>" + n + "</th><td class='num'>" + f2(x["retorno anual %"]) + "</td><td class='num'>" + f2(x["volatilidad anual %"]) + "</td><td class='num'>" +
+      f2(x["Sharpe"]) + "</td><td class='num'>" + f2(x["caída máxima %"]) + "</td><td class='num'>" + f2(x["semanas con ganancia %"]) + "</td>";
+    tm.appendChild(tr);
+  });
+  const a = d.backtest.sharpe_azar;
+  document.getElementById("nota-azar").textContent = "Referencia: 1 000 carteras de 3 activos al azar tienen un Sharpe medio de " + f2(a.media) + " (rango 5 %–95 %: " + f2(a.p5) + " a " + f2(a.p95) + "). Una estrategia sin habilidad cae dentro de ese rango.";
+  grafico(d.backtest);
+}
+function grafico(b) {
+  const cv = document.getElementById("grafico"), g = cv.getContext("2d"), W = cv.width, H = cv.height, mg = { l: 55, r: 15, t: 15, b: 30 };
+  g.clearRect(0, 0, W, H);
+  const series = [["Conjunto", "#1F3864", [], 3], ["Logística", "#1F3864", [6, 4], 2], ["1/N (10 activos)", "#6B6B6B", [], 3], ["SPY", "#6B6B6B", [8, 5], 2]];
+  const todos = series.flatMap(s => b.equidad[s[0]] || []); const lo = Math.min(...todos) * 0.97, hi = Math.max(...todos) * 1.03, n = b.fechas.length;
+  const X = i => mg.l + (W - mg.l - mg.r) * i / (n - 1), Y = v => H - mg.b - (H - mg.t - mg.b) * (v - lo) / (hi - lo);
+  g.strokeStyle = "#D0D0D0"; g.fillStyle = "#333"; g.font = "13px Calibri, Arial"; g.lineWidth = 1;
+  for (let k = 0; k <= 5; k++) { const v = lo + (hi - lo) * k / 5, y = Y(v); g.beginPath(); g.moveTo(mg.l, y); g.lineTo(W - mg.r, y); g.stroke(); g.fillText(v.toFixed(0), 8, y + 4); }
+  [0, Math.floor(n / 2), n - 1].forEach(i => g.fillText(b.fechas[i], Math.min(X(i) - 28, W - 90), H - 8));
+  const lg = document.getElementById("leyenda"); lg.innerHTML = "";
+  series.forEach(([nom, col, dash, w]) => {
+    const y = b.equidad[nom]; if (!y) return;
+    g.strokeStyle = col; g.lineWidth = w; g.setLineDash(dash); g.beginPath();
+    y.forEach((v, i) => { i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v)); }); g.stroke(); g.setLineDash([]);
+    lg.innerHTML += "<span><i style='border-color:" + col + ";border-top-style:" + (dash.length ? "dashed" : "solid") + "'></i>" + nom + " (" + y[y.length - 1].toFixed(0) + ")</span>";
+  });
+}
+document.getElementById("archivo").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = () => { try { pintar(JSON.parse(r.result)); } catch (err) { alert("El archivo no es un JSON válido del sistema: " + err.message); } };
+  r.readAsText(f);
+});
+pintar(DATOS_INCRUSTADOS);
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+@startuml
+' =============================================
+' PROTOCOLO DE DIAGRAMA DE SECUENCIA - BATD
+' =============================================
+skinparam actorStyle awesome
+skinparam style strictuml
+skinparam RoundCorner 15
+skinparam BoxPadding 15
+skinparam ParticipantPadding 20
+skinparam defaultFontName "Arial"
+skinparam backgroundColor white
+skinparam Shadowing true
+skinparam dpi 300
+skinparam ArrowThickness 1.5
+skinparam defaultFontStyle bold
+skinparam noteFontStyle bold
+skinparam sequenceGroupHeaderFontStyle bold
+
+skinparam sequence {
+    ArrowColor darkgreen
+    LifeLineBorderColor black
+    LifeLineBorderThickness 2.5
+    LifeLineBackgroundColor #85C1E9
+    GroupBorderColor #5D6D7E
+    GroupBodyBackgroundColor #FBFCFC
+    GroupHeaderFontColor black
+    GroupBackgroundColor #CDCDCD
+}
+skinparam participant {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam actor {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam database {
+    BackgroundColor #85C1E9
+    BorderColor black
+    FontColor black
+    FontStyle bold
+    FontSize 14
+}
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor black
+skinparam noteFontColor #000000
+
+title Diagrama de Secuencia — Misión 3: Alta Volatilidad y Alerta de Caída de un Activo
+
+actor "Grupo" as GRU
+participant "Script m3" as M3
+participant "Yahoo Finance" as YF
+participant "Constructor de\nvariables" as CON
+participant "Búsqueda\ncronológica" as BUS
+participant "Evaluador" as EVA
+
+GRU -> M3 : python m3 TICKER
+M3 -> YF : descargar el activo y el VIX
+YF --> M3 : precios
+M3 -> CON : variables causales y objetivos
+CON --> M3 : alta_vol y crash con tasa base
+loop cada modelo (Logística, Naive Bayes, SVM, Random Forest, XGBoost)
+    M3 -> BUS : TimeSeriesSplit con gap = 22 sobre el entrenamiento
+    BUS --> M3 : mejores hiperparámetros
+    M3 -> EVA : AUC, AUC-PR, F1 y Brier en la prueba
+end
+M3 -> EVA : umbral por costos elegido en validación
+EVA --> M3 : avisos, exhaustividad, precisión y costo total
+M3 --> GRU : tablas e importancia por permutación
+
+@enduml

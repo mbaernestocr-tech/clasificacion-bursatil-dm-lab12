@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Si usa este material, cítelo como se indica."
+title: "Modelos de clasificación para el mercado bursátil — Laboratorio 12 (Minería de Datos, FISI-UNMSM)"
+type: software
+authors:
+  - family-names: "Cancho-Rodríguez"
+    given-names: "Ernesto D."
+date-released: 2026-11-20
+license: CC-BY-4.0
+repository-code: "https://github.com/mbaernestocr-tech/clasificacion-bursatil-dm-lab12"
+keywords:
+  - minería de datos
+  - clasificación
+  - bolsa de valores
+  - educación
