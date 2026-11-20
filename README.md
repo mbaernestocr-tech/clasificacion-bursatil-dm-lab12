@@ -13,6 +13,7 @@ Material elaborado para el curso de Minería de Datos de la FISI-UNMSM (semestre
 
 ## Contenido
 
+- [Tablero en línea](#tablero-en-línea)
 - [Resultados en una mirada](#resultados-en-una-mirada)
 - [Notebooks](#notebooks)
 - [Figuras destacadas](#figuras-destacadas)
@@ -25,6 +26,10 @@ Material elaborado para el curso de Minería de Datos de la FISI-UNMSM (semestre
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Alcance y advertencias](#alcance-y-advertencias)
 - [Cómo citar y licencia](#cómo-citar-y-licencia)
+
+## Tablero en línea
+
+**[Abrir el tablero publicado (GitHub Pages)](https://mbaernestocr-tech.github.io/clasificacion-bursatil-dm-lab12/)** — muestra el semáforo de mercado, las señales COMPRAR / MANTENER / EVITAR al cierre del 19-nov-2026, la curva de capital del backtest y sus métricas. Los datos van incrustados en la página (no consulta ningún servidor), así que se ve igual que al abrir el archivo en local. Es una **foto** del 20-nov-2026, no un tablero en vivo, y no es asesoría de inversión.
 
 ## Resultados en una mirada
 
@@ -87,7 +92,7 @@ La Guía 5 escribe `dashboard_clasificacion.json` y `recomendaciones_5_sesiones.
 
 | Archivo | Qué es |
 |---|---|
-| [`08_Tablero_Clasificacion.html`](tablero/08_Tablero_Clasificacion.html) | Tablero de un solo archivo con los datos incrustados: semáforo de mercado, tabla de señales, curva de capital y métricas del backtest. **No requiere Internet** (gráfico en canvas) y sigue prácticas de accesibilidad (texto en las señales, tablas con encabezados, foco visible). Se abre con doble clic; permite cargar otro JSON. |
+| [`08_Tablero_Clasificacion.html`](tablero/08_Tablero_Clasificacion.html) ([en línea](https://mbaernestocr-tech.github.io/clasificacion-bursatil-dm-lab12/)) | Tablero de un solo archivo con los datos incrustados: semáforo de mercado, tabla de señales, curva de capital y métricas del backtest. **No requiere Internet** (gráfico en canvas) y sigue prácticas de accesibilidad (texto en las señales, tablas con encabezados, foco visible). Se abre con doble clic; permite cargar otro JSON. |
 | [`servidor_flask_tablero.py`](tablero/servidor_flask_tablero.py) | Servidor Flask mínimo: `/` sirve el tablero, `/api/dashboard` el JSON y `/api/recomendaciones` solo las señales. |
 | [`dashboard_clasificacion.json`](tablero/dashboard_clasificacion.json) | Datos que lee el servidor (salida de la Guía 5). |
 | [`recomendaciones_5_sesiones.csv`](tablero/recomendaciones_5_sesiones.csv) | Probabilidades por activo y señal. |
@@ -161,6 +166,7 @@ Nota: en Windows, LightGBM 4.7.0 junto con XGBoost 3.2.0 puede cerrar Python con
 
 ```text
 clasificacion-bursatil-dm-lab12/
+├── index.html            redirige al tablero (GitHub Pages)
 ├── notebooks/            5 notebooks ejecutados + 4 CSV de respaldo
 ├── figuras/              7 figuras destacadas producidas por los notebooks
 ├── diagramas/            5 UML del sistema (.puml y .png) + miniaturas/
